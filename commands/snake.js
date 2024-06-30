@@ -1,75 +1,56 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { MessageEmbed } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('snake')
         .setDescription('Play snake game'),
     async execute(interaction) {
-        // Initialize game variables
-        let snake = [{ x: 5, y: 5 }]; // Initial snake position
-        let apple = { x: 8, y: 8 }; // Initial apple position
+        let snake = [{ x: 5, y: 5 }];
+        let apple = { x: 8, y: 8 };
         let score = 0;
-        let direction = 'right'; // Initial direction
+        let direction = 'right';
 
-        // Function to render game state
         const renderGame = async () => {
-            const boardSize = 10; // Size of the game board (10x10 in this example)
-
-            // Create the game board using emojis
+            const boardSize = 10;
             let board = '';
+
             for (let y = 0; y < boardSize; y++) {
                 let row = '';
                 for (let x = 0; x < boardSize; x++) {
-                    // Check if current position is snake or apple
-                    let isSnake = false;
-                    let isApple = false;
-                    for (let segment of snake) {
-                        if (segment.x === x && segment.y === y) {
-                            isSnake = true;
-                            break;
-                        }
-                    }
-                    if (apple.x === x && apple.y === y) {
-                        isApple = true;
-                    }
+                    let isSnake = snake.some(segment => segment.x === x && segment.y === y);
+                    let isApple = apple.x === x && apple.y === y;
 
-                    // Determine emoji for current tile
                     if (isSnake) {
-                        row += ':green_square:';
+                        row += '🟩';
                     } else if (isApple) {
-                        row += ':red_circle:';
+                        row += '🍎';
                     } else {
-                        row += ':black_large_square:';
+                        row += '⬛';
                     }
                 }
                 board += `${row}\n`;
             }
 
-            // Create and send embed message with game board
-            const embed = new MessageEmbed()
+            const embed = new EmbedBuilder()
                 .setColor('#00ff00')
                 .setTitle('Snake Game')
                 .setDescription(board)
-                .addField('Score', score);
+                .addFields({ name: 'Score', value: `${score}` });
 
             await interaction.reply({ embeds: [embed] });
 
-            // Add reactions for controls
             const message = await interaction.fetchReply();
-            await message.react('⬅️'); // Left
-            await message.react('➡️'); // Right
-            await message.react('⬆️'); // Up
-            await message.react('⬇️'); // Down
+            await message.react('⬅️');
+            await message.react('➡️');
+            await message.react('⬆️');
+            await message.react('⬇️');
 
-            // Handle reactions to control the snake's movement
             const filter = (reaction, user) => {
                 return ['⬅️', '➡️', '⬆️', '⬇️'].includes(reaction.emoji.name) && user.id === interaction.user.id;
             };
 
-            const collector = message.createReactionCollector({ filter, time: 60000 }); // Collector for 1 minute
-            collector.on('collect', async (reaction, user) => {
-                // Update direction based on reaction
+            const collector = message.createReactionCollector({ filter, time: 60000 });
+            collector.on('collect', async (reaction) => {
                 if (reaction.emoji.name === '⬅️' && direction !== 'right') {
                     direction = 'left';
                 } else if (reaction.emoji.name === '➡️' && direction !== 'left') {
@@ -80,64 +61,40 @@ module.exports = {
                     direction = 'down';
                 }
 
-                // Move the snake
                 moveSnake();
-
-                // Render updated game state
                 await renderGame();
             });
 
-            // Function to move the snake
             const moveSnake = () => {
-                // Create a new head based on current direction
                 let newHead = { ...snake[0] };
                 switch (direction) {
-                    case 'left':
-                        newHead.x--;
-                        break;
-                    case 'right':
-                        newHead.x++;
-                        break;
-                    case 'up':
-                        newHead.y--;
-                        break;
-                    case 'down':
-                        newHead.y++;
-                        break;
+                    case 'left': newHead.x--; break;
+                    case 'right': newHead.x++; break;
+                    case 'up': newHead.y--; break;
+                    case 'down': newHead.y++; break;
                 }
 
-                // Check for collisions with boundaries (wrap around in this example)
                 if (newHead.x < 0) newHead.x = boardSize - 1;
                 if (newHead.x >= boardSize) newHead.x = 0;
                 if (newHead.y < 0) newHead.y = boardSize - 1;
                 if (newHead.y >= boardSize) newHead.y = 0;
 
-                // Check if snake collides with itself
-                for (let i = 1; i < snake.length; i++) {
-                    if (snake[i].x === newHead.x && snake[i].y === newHead.y) {
-                        // Game over condition
-                        console.log('Game over!');
-                        // Optionally, reset game state here
-                        return;
-                    }
+                if (snake.some(segment => segment.x === newHead.x && segment.y === newHead.y)) {
+                    console.log('Game over!');
+                    return;
                 }
 
-                // Check if snake eats the apple
                 if (newHead.x === apple.x && newHead.y === apple.y) {
-                    // Increase score and grow snake
                     score++;
-                    snake.unshift(newHead); // Add new head
-                    generateApple(); // Generate new apple
+                    snake.unshift(newHead);
+                    generateApple();
                 } else {
-                    // Move snake by adding new head and removing tail
                     snake.unshift(newHead);
                     snake.pop();
                 }
             };
 
-            // Function to generate new apple
             const generateApple = () => {
-                // Generate random position for apple (avoiding snake's current positions)
                 do {
                     apple.x = Math.floor(Math.random() * boardSize);
                     apple.y = Math.floor(Math.random() * boardSize);
@@ -145,7 +102,6 @@ module.exports = {
             };
         };
 
-        // Render initial game state
         await renderGame();
     },
 };
