@@ -1,4 +1,5 @@
-const { Client, GatewayIntentBits, REST, Routes, Collection } = require('discord.js');
+const { Client, GatewayIntentBits, REST, Routes, Collection, EmbedBuilder } = require('discord.js');
+
 const startServer = require('./server');
 const fs = require('fs');
 require('dotenv').config();
@@ -48,16 +49,13 @@ client.on('guildMemberAdd', async member => {
   const channel = member.guild.systemChannel;
 
   if (channel) {
-    const welcomeEmbed = {
-      color: 0x000000,
-      title: `Welcome to **${member.guild.name}**!`,
-      description: `Welcome **${member.user.username}** to **${member.guild.name}**!`,
-      thumbnail: { url: member.user.displayAvatarURL({ dynamic: true }) },
-      timestamp: new Date(),
-      footer: {
-        text: 'Play Video Games, Coding Sessions, Stream, Mess with bot, much more coming soon!',
-      },
-    };
+    const welcomeEmbed = new EmbedBuilder()
+      .setColor(0x000000)
+      .setTitle(`Welcome to **${member.guild.name}**!`)
+      .setDescription(`Welcome **${member.user.username}** to **${member.guild.name}**!`)
+      .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+      .setTimestamp()
+      .setFooter({ text: 'Play Video Games, Coding Sessions, Stream, Mess with bot, much more coming soon!' });
 
     channel.send({ embeds: [welcomeEmbed] });
   }
