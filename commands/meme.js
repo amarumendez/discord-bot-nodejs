@@ -1,5 +1,4 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const fetch = require('node-fetch');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -25,6 +24,7 @@ module.exports = {
         }
 
         try {
+            const fetch = await import('node-fetch').then(module => module.default); // Dynamic import
             const res = await fetch(`https://meme-api.com/gimme/${count}`);
             const memeData = await res.json();
 
